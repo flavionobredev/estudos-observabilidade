@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  log-api:
+    container_name: log-api
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      args:
+        - PORT=${PORT}
+        - APP_NAME=${APP_NAME}
+    ports:
+      - ${PORT}:${PORT}
+    volumes:
+      - ./api:/usr/${APP_NAME}/app
+    entrypoint: npm run start
