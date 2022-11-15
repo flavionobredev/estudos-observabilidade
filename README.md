@@ -16,3 +16,13 @@ docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all
 > important: The plugin can be accessed by host mode.
 
 For more information, see [Docker plugin](https://grafana.com/docs/loki/latest/clients/docker-driver/configuration/).
+
+## TODO
+
+- [x] Add docker-compose
+- [x] Add docker swarm
+- [ ] create default config to loki
+- [ ] create default config to grafana
+- [ ] dimensioning loki
+- [ ] add s3 storage
+- [ ] create swarm cluster on aws
