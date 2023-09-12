@@ -1,0 +1,27 @@
+# global:
+#   slack_api_url: 'https://hooks.slack.com/servic.....'
+
+# templates:
+# - '/etc/alertmanager/template/*.tmpl'
+
+# route:
+#   group_by: [group, env]
+#   receiver: 'slack'
+#   group_wait: 15s
+#   group_interval: 15s
+#   repeat_interval: 1m
+
+# receivers:
+# - name: 'slack'
+#   slack_configs:
+#   - channel: '#monitoramento-metricas'
+#     send_resolved: true
+#     icon_url: https://avatars3.githubusercontent.com/u/3380462
+#     title: '{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }} {{ .CommonLabels.alertname }}{{ end }}'
+#     text: >-
+#      {{ range .Alerts -}}
+#      *Alert:* {{ .Annotations.title }}{{ if .Labels.severity }} - `{{ .Labels.severity }}`{{ end }}
+
+#      *Summary:* {{ .Annotations.summary }}
+     
+#      *Description:* {{ .Annotations.description }}

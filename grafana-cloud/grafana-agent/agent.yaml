@@ -1,0 +1,22 @@
+server:
+  log_level: info
+
+integrations:
+  node_exporter:
+    enabled: true
+    metric_relabel_configs:
+      - action: keep
+        source_labels: [__name__]
+        regex: "node_filefd_maximum|node_context_switches_total|node_filefd_allocated|node_disk_io_time_seconds_total|node_disk_write_time_seconds_total|node_disk_read_time_seconds_total|node_sockstat_TCP_alloc|node_sockstat_UDP_inuse|node_sockstat_sockets_used|node_sockstat_TCP_tw|node_netstat_Tcp_CurrEstab|node_disk_writes_completed_total|node_disk_reads_completed_total|node_disk_read_bytes_total|node_disk_written_bytes_total|node_load1|node_load5|node_load15|node_memory_SwapFree_bytes|node_memory_SwapTotal_bytes|node_exporter_build_info|node_uname_info|node_memory_MemTotal_bytes|node_memory_MemAvailable_bytes|node_boot_time_seconds|node_network_transmit_bytes_total|node_network_receive_bytes_total|node_cpu_seconds_total|node_filesystem_size_bytes|node_filesystem_avail_bytes|node_network_info"
+  cadvisor:
+    enabled: true
+    docker_only: true
+    metric_relabel_configs:
+      - action: keep
+        source_labels: [__name__]
+        regex: "container_start_time_seconds|container_memory_rss|container_memory_cache|container_cpu_usage_seconds_total|container_network_transmit_bytes_total|container_network_receive_packets_total|container_network_receive_bytes_total"
+  prometheus_remote_write:
+    - url: ${GRAFANA_CLOUD_PROM_URL}/api/prom/push
+      basic_auth:
+        username: ${GRAFANA_CLOUD_USER_ID}
+        password: ${GRAFANA_CLOUD_API_KEY}

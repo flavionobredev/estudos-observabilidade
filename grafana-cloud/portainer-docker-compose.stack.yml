@@ -1,0 +1,73 @@
+version: "3.8"
+
+networks:
+  monitoring:
+    external: true
+
+configs:
+  general-agent.yaml:
+    external: true
+  app-agent.yaml:
+    external: true
+
+services:
+  ga-general:
+    image: grafana/agent:v0.36.0
+    privileged: true
+    hostname: "{{.Node.Hostname}}"
+    command: -config.expand-env -config.file=/etc/agent/agent.yaml
+    configs:
+      - source: general-agent.yaml
+        target: /etc/agent/agent.yaml
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /run/containerd/:/run/containerd/:ro
+    environment:
+      GRAFANA_CLOUD_PROM_URL: https://prometheus-prod-13-prod-us-east-0.grafana.net
+      GRAFANA_CLOUD_USER_ID: 1126050
+      GRAFANA_CLOUD_API_KEY: YOUR_GC_TOKEN
+    deploy:
+      mode: global
+    networks:
+      - monitoring
+
+  ga-app:
+    image: grafana/agent:v0.36.0
+    privileged: true
+    hostname: "{{.Node.Hostname}}"
+    command: -config.expand-env -config.file=/etc/agent/agent.yaml
+    configs:
+      - source: app-agent.yaml
+        target: /etc/agent/agent.yaml
+    environment:
+      GRAFANA_CLOUD_PROM_URL: https://prometheus-prod-13-prod-us-east-0.grafana.net
+      GRAFANA_CLOUD_USER_ID: 1126050
+      GRAFANA_CLOUD_API_KEY: YOUR_GC_TOKEN
+    networks:
+      - monitoring
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+  pushgateway:
+    image: prom/pushgateway
+    container_name: pushgateway
+    environment:
+      GLOG_v: 3
+    command:
+      - '--web.enable-admin-api'
+      - '--push.disable-consistency-check'
+    ports:
+      - 9091:9091
+    networks:
+      - monitoring
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager

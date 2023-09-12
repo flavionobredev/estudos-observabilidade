@@ -1,0 +1,195 @@
+# reference: https://github.dev/stefanprodan/dockprom
+version: "3.7"
+
+networks:
+  monitoring:
+    external: true
+  # socat:
+
+
+volumes:
+  # alertmanager_data: {}
+  grafana_data: {}
+  prometheus_data: {}
+
+services:
+  # nodeexporter:
+  #   #image: prom/node-exporter:v1.3.1
+  #   image: prom/node-exporter
+  #   container_name: nodeexporter
+  #   volumes:
+  #     - /proc:/host/proc:ro
+  #     - /sys:/host/sys:ro
+  #     - /:/rootfs:ro
+  #   command:
+  #     - '--path.procfs=/host/proc'
+  #     - '--path.rootfs=/rootfs'
+  #     - '--path.sysfs=/host/sys'
+  #     - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+  #   restart: unless-stopped
+  #   expose:
+  #     - 9100
+  #   networks:
+  #     - monitoring
+  #   labels:
+  #     org.musicash.monitoring: "nodeexporter"
+  #     org.musicash.context: "monitoring"
+  #     org.musicash.monitoring.type: "exporter"
+
+  # prometheus:
+  #   image: prom/prometheus:v2.37.9
+  #   volumes:
+  #     - ./prometheus:/etc/prometheus
+  #     - prometheus_data:/prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #     - '--web.console.libraries=/etc/prometheus/console_libraries'
+  #     - '--web.console.templates=/etc/prometheus/consoles'
+  #     - '--storage.tsdb.retention.time=200h'
+  #     - '--web.enable-lifecycle'
+  #     - '--web.enable-admin-api'
+  #   restart: unless-stopped
+  #   ports:
+  #     - "9090:9090"
+  #   networks:
+  #     - monitoring
+  #     - socat
+  #   deploy:
+  #     replicas: 1
+
+  ga-general:
+    image: grafana/agent:v0.36.0
+    privileged: true
+    hostname: "{{.Node.Hostname}}"
+    command: -config.expand-env -config.file=/etc/agent/agent.yaml
+    volumes:
+      - ./grafana-agent/agent.yaml:/etc/agent/agent.yaml
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /run/containerd/:/run/containerd/:ro
+    environment:
+      GRAFANA_CLOUD_PROM_URL: https://prometheus-prod-13-prod-us-east-0.grafana.net
+      GRAFANA_CLOUD_USER_ID: 1126050
+      GRAFANA_CLOUD_API_KEY: YOUR_GC_TOKEN
+    deploy:
+      mode: global
+    networks:
+      - monitoring
+
+  # ga-app:
+  #   image: grafana/agent:v0.36.0
+  #   privileged: true
+  #   hostname: "{{.Node.Hostname}}"
+  #   command: -config.expand-env -config.file=/etc/agent/agent.yaml
+  #   volumes:
+  #     - ./grafana-agent/app-agent.yaml:/etc/agent/agent.yaml
+  #   environment:
+  #     GRAFANA_CLOUD_PROM_URL: https://prometheus-prod-13-prod-us-east-0.grafana.net
+  #     GRAFANA_CLOUD_USER_ID: 1126050
+  #     GRAFANA_CLOUD_API_KEY: YOUR_GC_TOKEN
+  #   deploy:
+  #     replicas: 1
+  #   networks:
+  #     - monitoring
+
+  # pushgateway:
+  #   image: prom/pushgateway
+  #   container_name: pushgateway
+  #   environment:
+  #     GLOG_v: 3
+  #   command:
+  #     - '--web.enable-admin-api'
+  #     - '--push.disable-consistency-check'
+  #   ports:
+  #     - 9091:9091
+  #   networks:
+  #     - monitoring
+
+  # esse serviço ficará junto com as aplicações
+  # docker-api-socat:
+  #   image: tecnativa/docker-socket-proxy:0.1
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   networks:
+  #     - socat
+  #   environment:
+  #     NODES: 1
+  #     NETWORKS: 1
+  #     SERVICES: 1
+  #     TASKS: 1
+  #   logging:
+  #     # Socat logs send to black hole (we don't need them)
+  #     driver: none
+  #   deploy:
+  #     replicas: 1
+  #     resources:
+  #       reservations:
+  #         memory: 5M
+  #         cpus: '0.05'
+  #       limits:
+  #         memory: 10M
+  #         cpus: '0.1'
+  #     update_config:
+  #       parallelism: 1
+  #       order: start-first
+  #       failure_action: rollback
+  #     rollback_config:
+  #       parallelism: 1
+  #       order: start-first
+  #     placement:
+  #       constraints:
+  #         - node.role == manager
+
+  # alertmanager:
+  #   image: prom/alertmanager
+  #   container_name: alertmanager
+  #   depends_on:
+  #     - prometheus
+  #   volumes:
+  #     - ./alertmanager:/etc/alertmanager/:ro
+  #     - alertmanager_data:/alertmanager
+  #   restart: unless-stopped
+  #   ports:
+  #     - 9093:9093
+  #   command:
+  #     - --config.file=/etc/alertmanager/alertmanager.yml
+  #   networks:
+  #     - monitoring
+  #   labels:
+  #     org.musicash.monitoring: "alertmanager"
+  #     org.musicash.monitoring.type: "database"
+  #     org.musicash.context: "monitoring"
+
+  # grafana:
+  #   #image: grafana/grafana:9.2.2
+  #   image: grafana/grafana
+  #   container_name: grafana
+  #   # depends_on:
+  #   #   - alertmanager
+  #   user: "$UID:$GID"
+  #   restart: unless-stopped
+  #   networks:
+  #     - monitoring
+  #   ports:
+  #     - "8000:3000"
+  #   environment:
+  #     - GF_DEFAULT_INSTANCE_NAME=Monitoring
+  #     - GF_SECURITY_ADMIN_USER=admin
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin@123
+  #     - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+  #     - GF_AUTH_ANONYMOUS_ENABLED=false
+  #     - GF_AUTH_BASIC_ENABLED=true
+  #     - GF_SERVER_SERVE_FROM_SUB_PATH=true
+  #     - GF_ENABLE_GZIP=true
+  #   volumes:
+  #     - ./grafana:/var/lib/grafana
+  #     - ./grafana/dashboards:/var/lib/grafana/dashboards
+  #     - ./grafana/configs/dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml
+  #     - ./grafana/configs/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+  #   labels:
+  #     org.musicash.monitoring: "grafana"
+  #     org.musicash.context: "monitoring"
+  #     org.musicash.monitoring.type: "dashboard"

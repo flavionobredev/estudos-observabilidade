@@ -1,0 +1,33 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: "docker-host"
+
+remote_write:
+- url: https://prometheus-prod-13-prod-us-east-0.grafana.net/api/prom/push
+  basic_auth:
+    username: 11288888888
+    password: glc_eyJvIj.......
+
+# rule_files:
+#   - alert.rules
+
+# alerting:
+#   alertmanagers:
+#   - static_configs:
+#     - targets:
+#       - alertmanager:9093
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+  - job_name: "pushgateway"
+    static_configs:
+      - targets: ["pushgateway:9091"]
+    metrics_path: /metrics
+  # - job_name: "nodeexporter"
+  #   scrape_interval: 5s
+  #   static_configs:
+  #     - targets: ["nodeexporter:9100"]

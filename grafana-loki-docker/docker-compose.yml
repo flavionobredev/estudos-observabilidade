@@ -1,0 +1,82 @@
+version: '3.8'
+
+networks:
+  loki:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16
+          gateway: 10.5.0.1
+
+x-logging:
+  &logging
+  logging:
+    driver: loki
+    options:
+      loki-url: "http://10.5.0.2:3100/loki/api/v1/push"
+
+services:
+  log-api:
+    <<: *logging
+    container_name: log-api
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      args:
+        - PORT=${PORT}
+        - APP_NAME=${APP_NAME}
+    ports:
+      - ${PORT}:${PORT}
+    volumes:
+      - ./api:/usr/${APP_NAME}/app
+    entrypoint: sh -c "npm install && npm run start"
+
+
+  beauty-log-api:
+    <<: *logging
+    container_name: beauty-log-api
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      args:
+        - PORT=${PORT}
+        - APP_NAME=${APP_NAME}
+    volumes:
+      - ./api:/usr/${APP_NAME}/app
+    entrypoint: sh -c "npm install && npm run start"
+
+  loki:
+    container_name: loki
+    image: grafana/loki:2.7.0
+    ports:
+      - ${LOKI_PORT}:${LOKI_PORT}
+    networks:
+      loki:
+        # this is the place where we assign the static ipv4 address
+        ipv4_address: 10.5.0.2
+    command:
+      - -config.file=/etc/loki/local-config.yaml
+      - -print-config-stderr=true
+
+  grafana:
+    image: grafana/grafana:master
+    ports:
+      - "3000:3000"
+    environment:
+      GF_EXPLORE_ENABLED: "true"
+    networks:
+      loki:
+        ipv4_address: 10.5.0.3
+  # promtail:
+  #   image: grafana/promtail:2.7.0
+  #   container_name: promtail
+  #   volumes:
+  #     - /var/lib/docker/containers:/var/lib/docker/containers
+  #     - ./docker-config.yml:/etc/promtail/docker-config.yml
+  #   command: -config.file=/etc/promtail/docker-config.yml
+  #   ports:
+  #     - ${PROMTAIL_PORT}:${PROMTAIL_PORT}
+  #   depends_on:
+  #     - loki
+  #   networks:
+  #     - loki

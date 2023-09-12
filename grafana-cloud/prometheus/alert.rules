@@ -1,0 +1,11 @@
+groups:
+- name: nodeexport
+  rules:
+  - alert: DiskSpace
+    expr: 100 - (100 * node_filesystem_avail_bytes / node_filesystem_size_bytes) > 80
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instance {{ $labels.instance }} is low on disk space"
+      description: "diskspace on {{ $labels.instance }} is used over {{ $value }}% ."  

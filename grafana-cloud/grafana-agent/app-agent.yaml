@@ -1,0 +1,25 @@
+server:
+  log_level: info
+
+metrics:
+  global:
+    scrape_interval: 60s
+    scrape_timeout: 10s
+  configs:
+    - name: pushgateway
+      scrape_configs:
+        - job_name: "smartmob_app"
+          metrics_path: /metrics
+          static_configs:
+            - targets: ["pushgateway:9091"]
+      remote_write:
+        - url: ${GRAFANA_CLOUD_PROM_URL}/api/prom/push
+          write_relabel_configs:
+            - action: keep
+              source_labels: [__name__]
+              regex: "^sm_.*"
+            - action: labeldrop
+              regex: "instance|job"
+          basic_auth:
+            username: ${GRAFANA_CLOUD_USER_ID}
+            password: ${GRAFANA_CLOUD_API_KEY}
