@@ -8,7 +8,7 @@ metrics:
   configs:
     - name: pushgateway
       scrape_configs:
-        - job_name: "smartmob_app"
+        - job_name: "simple_metrics_example"
           metrics_path: /metrics
           static_configs:
             - targets: ["pushgateway:9091"]
